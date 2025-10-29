@@ -68,4 +68,4 @@ echo "   ./scripts/deploy-all.sh"
 echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-#
+##

@@ -78,9 +78,15 @@ Deploy everything in one command:
 # 2. Deploy Signoz
 ./scripts/deploy-signoz.sh
 
-# 3. Deploy everything else (OTEL collector, microservices, and Locust)
+# 3. Deploy microservices
+# For x86_64/amd64:
 ./scripts/deploy-all.sh
+
+# For ARM64/aarch64 (Apple Silicon, Raspberry Pi, etc.):
+./scripts/deploy-arm64-microservices.sh
 ```
+
+**⚠️ ARM64 Users:** Check your architecture with `uname -m`. If it shows `aarch64` or `arm64`, use the ARM64 script to avoid "exec format error".
 
 That's it! The script will handle the rest automatically.
 

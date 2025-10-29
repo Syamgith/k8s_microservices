@@ -1,0 +1,199 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: locust-script
+  namespace: locust
+data:
+  locustfile.py: |
+    """
+    Locust load test scenarios for Google Microservices Demo
+    """
+    import random
+    import logging
+    from locust import HttpUser, task, between
+
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
+    PRODUCT_IDS = [
+        "OLJCESPC7Z", "66VCHSJNUP", "1YMWWN1N4O", "L9ECAV7KIM",
+        "2ZYFJ3GM2N", "0PUK6V6EV0", "LS4PSXUNUM", "9SIQT8TOJO", "6E92ZMYYFZ",
+    ]
+
+    CURRENCIES = ["USD", "EUR", "GBP", "JPY", "CAD"]
+
+    class OnlineBoutiqueUser(HttpUser):
+        wait_time = between(1, 5)
+        cart_items = []
+
+        def on_start(self):
+            self.selected_currency = random.choice(CURRENCIES)
+
+        @task(5)
+        def view_homepage(self):
+            self.client.get("/", name="Homepage")
+
+        @task(10)
+        def view_product(self):
+            product_id = random.choice(PRODUCT_IDS)
+            self.client.get(f"/product/{product_id}", name="View Product")
+
+        @task(3)
+        def add_to_cart(self):
+            product_id = random.choice(PRODUCT_IDS)
+            quantity = random.randint(1, 3)
+            self.client.post("/cart", data={"product_id": product_id, "quantity": quantity}, name="Add to Cart")
+            self.cart_items.append({"product_id": product_id, "quantity": quantity})
+
+        @task(2)
+        def view_cart(self):
+            self.client.get("/cart", name="View Cart")
+
+        @task(1)
+        def checkout(self):
+            if not self.cart_items:
+                self.add_to_cart()
+            checkout_data = {
+                "email": f"test-{random.randint(1000, 9999)}@example.com",
+                "street_address": f"{random.randint(100, 999)} Main St",
+                "zip_code": f"{random.randint(10000, 99999)}",
+                "city": random.choice(["San Francisco", "New York", "Seattle"]),
+                "state": random.choice(["CA", "NY", "WA"]),
+                "country": "United States",
+                "credit_card_number": "4432-8015-6152-0454",
+                "credit_card_expiration_month": "12",
+                "credit_card_expiration_year": "2025",
+                "credit_card_cvv": "123",
+            }
+            self.client.post("/cart/checkout", data=checkout_data, name="Checkout")
+            self.cart_items = []
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: locust-master
+  namespace: locust
+  labels:
+    app: locust
+    role: master
+spec:
+  type: NodePort
+  ports:
+    - port: 8089
+      targetPort: 8089
+      nodePort: 30001
+      protocol: TCP
+      name: web-ui
+    - port: 5557
+      targetPort: 5557
+      protocol: TCP
+      name: master-p1
+    - port: 5558
+      targetPort: 5558
+      protocol: TCP
+      name: master-p2
+  selector:
+    app: locust
+    role: master
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-master
+  namespace: locust
+  labels:
+    app: locust
+    role: master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: locust
+      role: master
+  template:
+    metadata:
+      labels:
+        app: locust
+        role: master
+    spec:
+      containers:
+        - name: locust
+          image: locustio/locust:2.17.0
+          args:
+            - --master
+            - --host=http://frontend-external.microservices-demo.svc.cluster.local
+          ports:
+            - containerPort: 8089
+              name: web-ui
+              protocol: TCP
+            - containerPort: 5557
+              name: master-p1
+              protocol: TCP
+            - containerPort: 5558
+              name: master-p2
+              protocol: TCP
+          volumeMounts:
+            - name: locust-script
+              mountPath: /home/locust
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          env:
+            - name: LOCUST_LOCUSTFILE
+              value: /home/locust/locustfile.py
+      volumes:
+        - name: locust-script
+          configMap:
+            name: locust-script
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-worker
+  namespace: locust
+  labels:
+    app: locust
+    role: worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: locust
+      role: worker
+  template:
+    metadata:
+      labels:
+        app: locust
+        role: worker
+    spec:
+      containers:
+        - name: locust
+          image: locustio/locust:2.17.0
+          args:
+            - --worker
+            - --master-host=locust-master
+          volumeMounts:
+            - name: locust-script
+              mountPath: /home/locust
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          env:
+            - name: LOCUST_LOCUSTFILE
+              value: /home/locust/locustfile.py
+      volumes:
+        - name: locust-script
+          configMap:
+            name: locust-script

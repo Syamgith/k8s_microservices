@@ -1,0 +1,154 @@
+{
+  "title": "Checkout Service - Custom Instrumentation Dashboard",
+  "description": "Dashboard showing custom metrics and traces for the checkout service",
+  "tags": ["microservices", "checkout", "custom-instrumentation"],
+  "layout": [
+    {
+      "id": "orders-rate",
+      "title": "Order Rate",
+      "description": "Orders per second",
+      "queryType": "metrics",
+      "query": "rate(checkout_orders_total[5m])",
+      "chartType": "line",
+      "yAxisUnit": "ops",
+      "panelType": "graph"
+    },
+    {
+      "id": "order-value-histogram",
+      "title": "Order Value Distribution",
+      "description": "Distribution of order values in USD",
+      "queryType": "metrics",
+      "query": "histogram_quantile(0.50, rate(checkout_order_value_bucket[5m])) as p50, histogram_quantile(0.95, rate(checkout_order_value_bucket[5m])) as p95, histogram_quantile(0.99, rate(checkout_order_value_bucket[5m])) as p99",
+      "chartType": "line",
+      "yAxisUnit": "USD",
+      "panelType": "graph"
+    },
+    {
+      "id": "payment-methods",
+      "title": "Payment Methods Distribution",
+      "description": "Breakdown of payment methods used",
+      "queryType": "metrics",
+      "query": "sum by (method) (checkout_payment_method_total)",
+      "chartType": "pie",
+      "panelType": "graph"
+    },
+    {
+      "id": "processing-duration",
+      "title": "Order Processing Duration",
+      "description": "Time taken to process orders",
+      "queryType": "metrics",
+      "query": "histogram_quantile(0.50, rate(checkout_processing_duration_bucket[5m])) as p50, histogram_quantile(0.95, rate(checkout_processing_duration_bucket[5m])) as p95, histogram_quantile(0.99, rate(checkout_processing_duration_bucket[5m])) as p99",
+      "chartType": "line",
+      "yAxisUnit": "ms",
+      "panelType": "graph"
+    },
+    {
+      "id": "active-checkouts",
+      "title": "Active Checkout Sessions",
+      "description": "Number of ongoing checkout sessions",
+      "queryType": "metrics",
+      "query": "checkout_active",
+      "chartType": "value",
+      "panelType": "value",
+      "thresholds": [
+        {"value": 50, "color": "yellow"},
+        {"value": 100, "color": "red"}
+      ]
+    },
+    {
+      "id": "cart-items",
+      "title": "Average Cart Items",
+      "description": "Average number of items per order",
+      "queryType": "metrics",
+      "query": "avg(checkout_cart_items)",
+      "chartType": "value",
+      "panelType": "value"
+    },
+    {
+      "id": "error-rate",
+      "title": "Checkout Error Rate",
+      "description": "Failed orders per second",
+      "queryType": "metrics",
+      "query": "rate(checkout_orders_total{status=\"failed\"}[5m])",
+      "chartType": "line",
+      "yAxisUnit": "ops",
+      "panelType": "graph",
+      "thresholds": [
+        {"value": 0.1, "color": "yellow"},
+        {"value": 1, "color": "red"}
+      ]
+    },
+    {
+      "id": "trace-latency",
+      "title": "Checkout Service Latency",
+      "description": "Request latency percentiles",
+      "queryType": "traces",
+      "filter": "service.name = \"checkoutservice\"",
+      "aggregation": "duration",
+      "groupBy": "spanName",
+      "chartType": "line",
+      "yAxisUnit": "ms",
+      "panelType": "graph"
+    },
+    {
+      "id": "trace-count",
+      "title": "Trace Count by Operation",
+      "description": "Number of traces for each operation",
+      "queryType": "traces",
+      "filter": "service.name = \"checkoutservice\"",
+      "aggregation": "count",
+      "groupBy": "spanName",
+      "chartType": "bar",
+      "panelType": "graph"
+    },
+    {
+      "id": "high-value-orders",
+      "title": "High Value Orders (>$100)",
+      "description": "Count of orders above $100",
+      "queryType": "traces",
+      "filter": "service.name = \"checkoutservice\" AND order.value > 100",
+      "aggregation": "count",
+      "chartType": "value",
+      "panelType": "value"
+    },
+    {
+      "id": "custom-spans",
+      "title": "Custom Span Duration",
+      "description": "Duration of custom instrumented operations",
+      "queryType": "traces",
+      "filter": "service.name = \"checkoutservice\" AND (spanName = \"ValidateOrder\" OR spanName = \"ProcessPayment\" OR spanName = \"SendConfirmationEmail\")",
+      "aggregation": "duration",
+      "groupBy": "spanName",
+      "chartType": "line",
+      "yAxisUnit": "ms",
+      "panelType": "graph"
+    },
+    {
+      "id": "logs-errors",
+      "title": "Error Logs",
+      "description": "Recent error logs from checkout service",
+      "queryType": "logs",
+      "filter": "service = \"checkoutservice\" AND level = \"error\"",
+      "limit": 100,
+      "panelType": "table"
+    }
+  ],
+  "variables": [
+    {
+      "name": "percentile",
+      "type": "custom",
+      "options": ["0.50", "0.95", "0.99"],
+      "default": "0.95"
+    },
+    {
+      "name": "timeRange",
+      "type": "time",
+      "default": "15m"
+    }
+  ],
+  "refreshInterval": "10s",
+  "timeRange": {
+    "from": "now-15m",
+    "to": "now"
+  }
+}

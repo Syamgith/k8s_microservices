@@ -67,9 +67,28 @@ See [PREREQUISITES.md](PREREQUISITES.md) for detailed installation instructions.
 
 ## Quick Start
 
-Follow these steps to get everything running:
+### Option 1: Automated Deployment (Recommended)
 
-### 1. Setup Kubernetes Cluster
+Deploy everything in one command:
+
+```bash
+# 1. Setup Kubernetes cluster
+./scripts/setup-cluster.sh
+
+# 2. Deploy Signoz
+./scripts/deploy-signoz.sh
+
+# 3. Deploy everything else (OTEL collector, microservices, and Locust)
+./scripts/deploy-all.sh
+```
+
+That's it! The script will handle the rest automatically.
+
+### Option 2: Step-by-Step Deployment
+
+Follow these steps to deploy components individually:
+
+#### 1. Setup Kubernetes Cluster
 
 ```bash
 ./scripts/setup-cluster.sh
@@ -77,7 +96,7 @@ Follow these steps to get everything running:
 
 This creates a Kind cluster named `microservices-demo` with required port mappings.
 
-### 2. Deploy Signoz
+#### 2. Deploy Signoz
 
 ```bash
 ./scripts/deploy-signoz.sh
@@ -87,11 +106,11 @@ This deploys Signoz using Helm with optimized settings for local development.
 
 **Access Signoz UI:** http://localhost:30000 or use port-forward:
 ```bash
-kubectl port-forward -n signoz svc/signoz-frontend 3301:3301
+kubectl port-forward -n signoz svc/signoz-frontend 9090:3301
 ```
-Then visit: http://localhost:3301
+Then visit: http://localhost:9090
 
-### 3. Deploy Microservices Demo
+#### 3. Deploy Microservices Demo
 
 ```bash
 ./scripts/deploy-microservices-demo.sh
@@ -101,11 +120,11 @@ This downloads Google's microservices-demo and deploys it with OpenTelemetry con
 
 **Access Application:**
 ```bash
-kubectl port-forward -n microservices-demo svc/frontend-external 8080:80
+kubectl port-forward -n microservices-demo svc/frontend-external 9080:80
 ```
-Then visit: http://localhost:8080
+Then visit: http://localhost:9080
 
-### 4. Deploy Traffic Generator
+#### 4. Deploy Traffic Generator
 
 ```bash
 ./scripts/deploy-locust.sh
@@ -113,7 +132,11 @@ Then visit: http://localhost:8080
 
 This deploys Locust with pre-configured test scenarios.
 
-**Access Locust UI:** http://localhost:30001
+**Access Locust UI:** http://localhost:30001 or use port-forward:
+```bash
+kubectl port-forward -n locust svc/locust-master 9089:8089
+```
+Then visit: http://localhost:9089
 
 **Start Traffic:**
 1. Open Locust UI in browser
@@ -121,9 +144,9 @@ This deploys Locust with pre-configured test scenarios.
 3. Set spawn rate: 2
 4. Click "Start swarming"
 
-### 5. View Dashboards
+#### 5. View Dashboards
 
-Open Signoz UI (http://localhost:3301) and explore:
+Open Signoz UI (http://localhost:9090) and explore:
 - **Metrics:** Real-time application and custom metrics
 - **Traces:** Distributed traces across services
 - **Logs:** Aggregated logs from all services
@@ -346,9 +369,9 @@ kubectl delete namespace locust
 
 ## Links & Resources
 
-- **Signoz Dashboard:** http://localhost:3301
-- **Application Frontend:** http://localhost:8080 (via port-forward)
-- **Locust UI:** http://localhost:30001
+- **Signoz Dashboard:** http://localhost:9090 (via port-forward)
+- **Application Frontend:** http://localhost:9080 (via port-forward)
+- **Locust UI:** http://localhost:9089 (via port-forward) or http://localhost:30001 (NodePort)
 - [Signoz Documentation](https://signoz.io/docs/)
 - [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
 - [Google Microservices Demo](https://github.com/GoogleCloudPlatform/microservices-demo)

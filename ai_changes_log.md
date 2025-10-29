@@ -321,3 +321,193 @@ This file tracks all changes made by the AI assistant during the implementation 
 ---
 
 **Implementation completed successfully on 2025-10-29**
+
+---
+
+## 2025-10-29 - Signoz Configuration Fix and Deployment Improvement
+
+### Issue Encountered
+During initial Signoz deployment, the OTEL collector pods were crashing with error:
+```
+'exporters' unknown type: "clickhouse" for id: "clickhouse"
+```
+
+### Root Cause
+The custom OTEL collector configuration in `kubernetes/signoz/values.yaml` was using incompatible exporter types. Signoz uses custom exporters (`clickhouselogsexporter`, `clickhousetraces`, `signozclickhousemetrics`) instead of the generic `clickhouse` exporter.
+
+### Solution Implemented
+**Architectural Decision:** Separated concerns between Signoz's internal OTEL collector and application-level collection.
+
+1. **Simplified Signoz Configuration**
+   - **File Modified:** `kubernetes/signoz/values.yaml`
+   - **Change:** Removed custom `otelCollector.config` section
+   - **Result:** Uses Signoz's default, stable OTEL collector configuration
+   - **Benefit:** More reliable, maintained by Signoz team, less prone to version incompatibilities
+
+2. **Dedicated Application OTEL Collector**
+   - **Approach:** Use the separate OTEL collector deployment in `kubernetes/otel-collector/deployment.yaml`
+   - **Flow:** Microservices → Custom OTEL Collector → Signoz OTEL Collector → ClickHouse
+   - **Benefits:**
+     - Separation of concerns
+     - Can add custom processing without affecting Signoz
+     - Flexibility for future enhancements
+     - Signoz remains stable with defaults
+
+### New File Created
+
+#### scripts/deploy-all.sh
+- **Created:** Consolidated deployment script
+- **Permissions:** Set to executable (chmod +x)
+- **Content:**
+  - Step 1: Verify Signoz is deployed
+  - Step 2: Deploy custom OTEL collector
+  - Step 3: Deploy microservices demo with OTEL configuration
+  - Step 4: Deploy Locust traffic generator
+  - Color-coded output for better UX
+  - Error handling and status checks
+  - Comprehensive access information display
+  - Quick start guide in output
+- **Purpose:** One-command deployment of entire observability stack after Signoz
+
+### Documentation Updated
+
+#### README.md
+- **Modified:** Quick Start section
+- **Addition:** Added "Option 1: Automated Deployment (Recommended)" using deploy-all.sh
+- **Reorganized:** Existing steps now under "Option 2: Step-by-Step Deployment"
+- **Updated:** All step headings adjusted for new structure (### → ####)
+- **Purpose:** Easier onboarding with automated deployment option
+
+### Deployment Verification
+
+After fixes, all Signoz pods running successfully:
+```
+signoz-0                          1/1 Running
+signoz-otel-collector             1/1 Running  ← Previously crashing
+chi-signoz-clickhouse-cluster     1/1 Running
+signoz-clickhouse-operator        2/2 Running
+signoz-zookeeper-0                1/1 Running
+```
+
+### Impact Summary
+
+✅ **What Works Now:**
+- Signoz deploys successfully without crashes
+- OTEL collector stable with default configuration
+- Clear separation between Signoz internals and application collection
+- Easier deployment with consolidated script
+- Better user experience with automated deployment option
+
+✅ **What's Maintained:**
+- All metrics, logs, and traces collection functionality
+- Custom instrumentation capability
+- Dashboard configuration
+- Traffic generation
+- Complete observability stack
+
+### Files Modified in This Update
+1. `kubernetes/signoz/values.yaml` - Simplified OTEL collector config
+2. `README.md` - Added automated deployment option
+3. `ai_changes_log.md` - This update log
+
+### Files Created in This Update
+1. `scripts/deploy-all.sh` - Consolidated deployment script
+
+---
+
+**Fix completed and tested successfully on 2025-10-29**
+
+---
+
+## 2025-10-29 - Port Configuration Update for Multi-Project Environment
+
+### Issue Identified
+User reported potential port conflicts with other projects running on the same machine:
+- Django (typically port 8000)
+- Next.js (typically port 3000)
+- Other projects using ports 3001, 8080, etc.
+
+### Ports Previously Used
+**Port-forward recommendations:**
+- Signoz UI: 3301
+- Application Frontend: 8080
+- Locust UI: 8089
+
+**Problem:** These are common development ports that conflict with other projects.
+
+### Solution: Changed to Uncommon Ports
+
+**New port assignments:**
+- **Signoz UI:** `9090` (was 3301)
+- **Application Frontend:** `9080` (was 8080)
+- **Locust UI:** `9089` (was 8089)
+
+**Rationale:** Ports in the 90xx range are less commonly used for development, reducing likelihood of conflicts.
+
+### Files Updated
+
+1. **scripts/deploy-all.sh**
+   - Updated all port-forward commands to use new ports
+   - Updated access URLs in output
+
+2. **README.md**
+   - Updated Quick Start section with new ports
+   - Updated all port-forward examples
+   - Updated "Links & Resources" section
+   - Added port-forward option to Locust access
+
+3. **scripts/deploy-signoz.sh**
+   - Updated port-forward command: `9090:3301`
+   - Updated access URL to `http://localhost:9090`
+
+4. **scripts/deploy-microservices-demo.sh**
+   - Updated port-forward command: `9080:80`
+   - Updated access URL to `http://localhost:9080`
+
+5. **scripts/deploy-locust.sh**
+   - Updated port-forward command: `9089:8089`
+   - Updated access URL to `http://localhost:9089`
+
+### Port Reference Table
+
+| Service | Old Port | New Port | Type | URL |
+|---------|----------|----------|------|-----|
+| Signoz UI | 3301 | 9090 | Port-forward | http://localhost:9090 |
+| Application | 8080 | 9080 | Port-forward | http://localhost:9080 |
+| Locust UI | 8089 | 9089 | Port-forward | http://localhost:9089 |
+| Signoz (NodePort) | 30000 | 30000 | NodePort | http://localhost:30000 |
+| Locust (NodePort) | 30001 | 30001 | NodePort | http://localhost:30001 |
+
+**Note:** NodePorts (30xxx) remain unchanged as they're in a separate, non-conflicting range.
+
+### Benefits
+
+✅ **Avoids Common Port Conflicts:**
+- No conflict with Django (8000)
+- No conflict with Next.js (3000, 3001)
+- No conflict with common dev servers (8080, 8000)
+
+✅ **User-Friendly:**
+- All new ports follow a pattern (90xx)
+- Easy to remember: 9090, 9080, 9089
+- Users can run multiple dev environments simultaneously
+
+✅ **Backward Compatible:**
+- NodePorts still available as alternative
+- No changes to Kubernetes service configurations
+- Only port-forward recommendations changed
+
+### Impact
+
+**No Breaking Changes:**
+- Kubernetes services unchanged
+- Internal cluster communication unaffected
+- Only user-facing access instructions updated
+
+**User Action Required:**
+- Use new port numbers when running port-forward commands
+- Update any bookmarks or scripts that reference old ports
+
+---
+
+**Port update completed on 2025-10-29**

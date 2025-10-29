@@ -34,6 +34,19 @@ Alternative: Use Minikube instead of Kind
 - **CPU:** 4 cores recommended
 - **Disk Space:** 20GB free space
 - **OS:** macOS, Linux, or Windows with WSL2
+- **Architecture:** Works on both x86_64/amd64 and ARM64/aarch64
+
+### ARM64 Note
+
+If you're on ARM64 (Apple Silicon, Raspberry Pi, etc.), use the ARM64-specific deployment script:
+```bash
+./scripts/deploy-arm64-microservices.sh
+```
+
+Check your architecture:
+```bash
+uname -m  # Shows: aarch64 (ARM64) or x86_64 (Intel/AMD)
+```
 
 ## Quick Verification
 

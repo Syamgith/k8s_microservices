@@ -616,4 +616,5 @@ kubectl create namespace locust
 
 ---
 
-📊 Signoz UI: http://4.187.154.189:3301
+📊 Signoz UI: http://4.187.154.189:8080
+APP: http://4.187.134.143/

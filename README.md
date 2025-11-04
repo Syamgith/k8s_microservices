@@ -90,7 +90,9 @@ Deploy to Microsoft Azure using **$200 free credits** (no charges!):
 - ✅ Production-like environment with auto-scaling
 - 💡 Remember to run `./scripts/cleanup-aks.sh` when done!
 
-**See [AZURE-DEPLOYMENT.md](AZURE-DEPLOYMENT.md) for complete guide.**
+**Deployment Options:**
+- 📱 **No installation needed?** See [AZURE-PORTAL-GUIDE.md](AZURE-PORTAL-GUIDE.md) - Use browser only!
+- 💻 **Using CLI?** See [AZURE-DEPLOYMENT.md](AZURE-DEPLOYMENT.md) - Complete CLI guide
 
 **Alternative: GCP**
 GCP offers $300 credit (90 days) but this demo uses ~$1-2. See [GCP-FREE-TRIAL-SETUP.md](GCP-FREE-TRIAL-SETUP.md) and [GCP-DEPLOYMENT.md](GCP-DEPLOYMENT.md).

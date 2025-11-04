@@ -615,3 +615,5 @@ kubectl create namespace locust
 ./scripts/expose-services-public.sh
 
 ---
+
+📊 Signoz UI: http://4.187.154.189:3301

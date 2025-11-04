@@ -19,7 +19,7 @@ echo ""
 
 # Patch Signoz frontend to LoadBalancer
 echo "1. Exposing Signoz UI..."
-kubectl patch svc signoz-frontend -n signoz -p '{"spec": {"type": "LoadBalancer"}}'
+kubectl patch svc signoz -n signoz -p '{"spec": {"type": "LoadBalancer"}}'
 
 # Patch microservices frontend to LoadBalancer (already should be LoadBalancer)
 echo "2. Exposing Application Frontend..."
@@ -60,7 +60,7 @@ wait_for_ip() {
 }
 
 # Wait for each service
-wait_for_ip "signoz" "signoz-frontend"
+wait_for_ip "signoz" "signoz"
 wait_for_ip "microservices-demo" "frontend-external"
 wait_for_ip "locust" "locust-master"
 
@@ -71,8 +71,9 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 echo ""
 
 # Get Signoz IP
-SIGNOZ_IP=$(kubectl get svc signoz-frontend -n signoz -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
-SIGNOZ_PORT=$(kubectl get svc signoz-frontend -n signoz -o jsonpath='{.spec.ports[0].port}')
+SIGNOZ_IP=$(kubectl get svc signoz -n signoz -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
+# Signoz UI is on port 3301 (frontend UI port)
+SIGNOZ_PORT="3301"
 
 if [ -n "$SIGNOZ_IP" ] && [ "$SIGNOZ_IP" != "null" ]; then
     echo -e "${BLUE}📊 Signoz UI:${NC}"
@@ -80,17 +81,25 @@ if [ -n "$SIGNOZ_IP" ] && [ "$SIGNOZ_IP" != "null" ]; then
     echo ""
 else
     echo -e "${YELLOW}📊 Signoz UI: (Pending - check again in 1-2 minutes)${NC}"
-    echo "   kubectl get svc signoz-frontend -n signoz"
+    echo "   kubectl get svc signoz -n signoz"
     echo ""
 fi
 
 # Get App IP
 APP_IP=$(kubectl get svc frontend-external -n microservices-demo -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
 APP_PORT=$(kubectl get svc frontend-external -n microservices-demo -o jsonpath='{.spec.ports[0].port}')
+# If port is empty, default to 80
+if [ -z "$APP_PORT" ]; then
+    APP_PORT="80"
+fi
 
 if [ -n "$APP_IP" ] && [ "$APP_IP" != "null" ]; then
     echo -e "${BLUE}🛍️  Online Boutique (Application):${NC}"
-    echo "   http://$APP_IP:$APP_PORT"
+    if [ "$APP_PORT" == "80" ]; then
+        echo "   http://$APP_IP"
+    else
+        echo "   http://$APP_IP:$APP_PORT"
+    fi
     echo ""
 else
     echo -e "${YELLOW}🛍️  Application: (Pending - check again in 1-2 minutes)${NC}"
@@ -101,6 +110,10 @@ fi
 # Get Locust IP
 LOCUST_IP=$(kubectl get svc locust-master -n locust -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
 LOCUST_PORT=$(kubectl get svc locust-master -n locust -o jsonpath='{.spec.ports[0].port}')
+# If port is empty, default to 8089
+if [ -z "$LOCUST_PORT" ]; then
+    LOCUST_PORT="8089"
+fi
 
 if [ -n "$LOCUST_IP" ] && [ "$LOCUST_IP" != "null" ]; then
     echo -e "${BLUE}🔥 Locust UI:${NC}"
@@ -127,6 +140,11 @@ echo "  • This is fine for temporary demos"
 echo ""
 
 # Create a summary file
+APP_URL="http://$APP_IP"
+if [ "$APP_PORT" != "80" ]; then
+    APP_URL="http://$APP_IP:$APP_PORT"
+fi
+
 cat > public-urls.txt <<EOF
 Microservices Observability Demo - Public URLs
 ================================================
@@ -135,7 +153,7 @@ Microservices Observability Demo - Public URLs
    http://$SIGNOZ_IP:$SIGNOZ_PORT
 
 🛍️  Online Boutique (Application Frontend):
-   http://$APP_IP:$APP_PORT
+   $APP_URL
 
 🔥 Locust UI (Traffic Generator):
    http://$LOCUST_IP:$LOCUST_PORT

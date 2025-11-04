@@ -572,131 +572,46 @@ az group list --output table
 
 ---
 
-## Tips for Using Cloud Shell
+OR DO THIS
 
-### Save Your Work
+In Cloud Shell, run:
 
-Cloud Shell has 5GB persistent storage in `$HOME`:
+# Connect to cluster
 
-```bash
-# Your home directory persists across sessions
-cd ~
-ls -la
+az aks get-credentials \
+ --resource-group microservices-demo-rg \
+ --name microservices-demo
 
-# Files in /tmp are deleted after session ends
-```
+# VERIFY ARCHITECTURE (THIS IS CRITICAL!)
 
-### Upload/Download Files
+kubectl debug node/$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}') -it --image=busybox -- uname -m
 
-Use the **Upload/Download** button (↑↓) in Cloud Shell toolbar.
-
-### Multiple Tabs
-
-You can open multiple Cloud Shell tabs:
-
-- One for monitoring: `watch kubectl get pods -A`
-- One for commands
-
-### Cloud Shell Editor
-
-Built-in code editor:
-
-```bash
-code .
-```
-
-Opens VSCode-like editor in browser!
-
-### Timeout
-
-Cloud Shell times out after 20 minutes of inactivity. Just click to reactivate.
+Expected output: x86_64 (NOT aarch64!)
 
 ---
 
-## Common Issues
+Step 4: Deploy Everything
 
-### "Command not found"
+# Create namespaces
 
-Cloud Shell should have everything. If not:
+kubectl create namespace signoz
+kubectl create namespace microservices-demo
+kubectl create namespace locust
 
-```bash
-# Reinstall kubectl
-az aks install-cli
-```
+# Deploy Signoz
 
-### "Permission denied"
+./scripts/deploy-signoz.sh
 
-Scripts need execute permission:
+# Deploy microservices
 
-```bash
-chmod +x script-name.sh
-```
+./scripts/deploy-microservices-demo.sh
 
-### "Cannot pull image"
+# Deploy Locust
 
-Wait a bit longer - Azure is pulling container images.
+./scripts/deploy-locust.sh
 
-```bash
-kubectl describe pod <pod-name> -n <namespace>
-```
+# Expose services
 
-### "LoadBalancer IP pending"
-
-Azure takes 2-3 minutes to provision public IPs. Check again:
-
-```bash
-kubectl get svc --all-namespaces | grep LoadBalancer
-```
+./scripts/expose-services-public.sh
 
 ---
-
-## Complete Workflow Summary
-
-1. ✅ Login to Azure Portal
-2. ✅ Create Resource Group via Portal
-3. ✅ Create AKS Cluster via Portal (10 minutes)
-4. ✅ Open Cloud Shell
-5. ✅ Connect to cluster
-6. ✅ Deploy Signoz (10 minutes)
-7. ✅ Deploy Microservices (10 minutes)
-8. ✅ Deploy Locust
-9. ✅ Expose services publicly
-10. ✅ Get public URLs (wait 2-3 minutes)
-11. ✅ Access and demo!
-12. ✅ Cleanup when done
-
-**Total time: ~30-40 minutes**
-**Cost: ~$0.40 from your $200 credit**
-
----
-
-## Advantages of This Method
-
-✅ **No local installation** - everything in browser
-✅ **Pre-authenticated** - no credential management
-✅ **Persistent storage** - scripts saved for later
-✅ **Works anywhere** - any device with browser
-✅ **Built-in editor** - can edit files in browser
-
----
-
-## Next Steps
-
-After completing the demo:
-
-1. Take screenshots of dashboards
-2. Note the public URLs
-3. Run cleanup
-4. Check remaining credit balance
-
-**You should have ~$199.60 remaining!**
-
----
-
-## Need Help?
-
-- **Azure Cloud Shell Docs:** https://docs.microsoft.com/en-us/azure/cloud-shell/
-- **AKS Docs:** https://docs.microsoft.com/en-us/azure/aks/
-- **Support:** Azure Portal → Help + support
-
-Enjoy your demo! 🚀

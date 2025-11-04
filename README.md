@@ -67,30 +67,54 @@ See [PREREQUISITES.md](PREREQUISITES.md) for detailed installation instructions.
 
 ## Quick Start
 
-### Option 1: Automated Deployment (Recommended)
+### Option 1: Azure Free Trial (Recommended - $200 FREE Credit!)
 
-Deploy everything in one command:
+Deploy to Microsoft Azure using **$200 free credits** (no charges!):
 
 ```bash
-# 1. Setup Kubernetes cluster
+# 1. Setup AKS cluster (optimized for free trial)
+./scripts/setup-aks-cluster.sh
+
+# 2. Deploy Signoz
+./scripts/deploy-signoz.sh
+
+# 3. Deploy microservices
+./scripts/deploy-all.sh
+```
+
+**Benefits:**
+- ✅ **$200 FREE credit** for new Azure accounts
+- ✅ **AKS control plane: FREE!** (Azure's unique advantage)
+- ✅ This demo uses only **$0.40** of your $200 credit (~5 hours)
+- ✅ Works perfectly regardless of your local architecture (ARM64/x86_64)
+- ✅ Production-like environment with auto-scaling
+- 💡 Remember to run `./scripts/cleanup-aks.sh` when done!
+
+**See [AZURE-DEPLOYMENT.md](AZURE-DEPLOYMENT.md) for complete guide.**
+
+**Alternative: GCP**
+GCP offers $300 credit (90 days) but this demo uses ~$1-2. See [GCP-FREE-TRIAL-SETUP.md](GCP-FREE-TRIAL-SETUP.md) and [GCP-DEPLOYMENT.md](GCP-DEPLOYMENT.md).
+
+### Option 2: Local Deployment (x86_64 only)
+
+Deploy everything locally:
+
+```bash
+# 1. Setup Kubernetes cluster (Kind)
 ./scripts/setup-cluster.sh
 
 # 2. Deploy Signoz
 ./scripts/deploy-signoz.sh
 
 # 3. Deploy microservices
-# For x86_64/amd64:
 ./scripts/deploy-all.sh
-
-# For ARM64/aarch64 (Apple Silicon, Raspberry Pi, etc.):
-./scripts/deploy-arm64-microservices.sh
 ```
 
-**⚠️ ARM64 Users:** Check your architecture with `uname -m`. If it shows `aarch64` or `arm64`, use the ARM64 script to avoid "exec format error".
+**⚠️ ARM64 Users (Apple Silicon, Raspberry Pi, etc.):** The Google microservices-demo has limited ARM64 support. Use **Option 1 (GCP)** instead for the best experience.
 
 That's it! The script will handle the rest automatically.
 
-### Option 2: Step-by-Step Deployment
+### Option 3: Step-by-Step Deployment
 
 Follow these steps to deploy components individually:
 
